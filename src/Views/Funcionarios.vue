@@ -276,7 +276,7 @@ input:focus {
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { supabase } from '../composables/useSupaBase.js'
+import { supabase } from '../composables/useSupabase.js'
 
 const funcionarios = ref([])
 const editandoId = ref(null)
