@@ -351,8 +351,6 @@ const prepararEdicao = (e) => {
   Object.assign(form, e)
 }
 
-// ✅ CORRIGIDO: soft delete (ativo = false) ao invés de DELETE
-// Evita quebrar o histórico de retiradas vinculadas (ON DELETE RESTRICT)
 const desativar = async (id) => {
   if (!confirm('Deseja desativar este EPI? Ele não aparecerá mais no sistema, mas o histórico de retiradas será preservado.')) return
 
