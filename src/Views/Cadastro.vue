@@ -49,15 +49,19 @@
           </div>
 
           <div class="form-group">
-            <label>Foto</label>
-            <input v-model="form.foto" type="text" />
+            <label>Foto (URL)</label>
+            <input v-model="form.foto" type="text" placeholder="URL do Supabase Storage" />
           </div>
 
           <div class="divider"></div>
 
           <div class="action-bar">
-            <button type="submit" class="btn btn-primary">{{ editandoId ? 'Salvar Alterações' : 'Cadastrar EPI'}}</button>
-            <button type="button" @click="resetForm" class="btn btn-outline">Limpar formulário</button>
+            <button type="submit" class="btn btn-primary">
+              {{ editandoId ? 'Salvar Alterações' : 'Cadastrar EPI' }}
+            </button>
+            <button type="button" @click="resetForm" class="btn btn-outline">
+              Limpar formulário
+            </button>
           </div>
         </form>
       </section>
@@ -84,7 +88,8 @@
               <td>{{ e.descricao }}</td>
               <td class="text-center">
                 <button @click="prepararEdicao(e)" class="btn-action edit">Editar</button>
-                <button @click="excluir(e.id)" class="btn-action delete">Excluir</button>
+                <!-- ✅ Soft delete: desativa ao invés de deletar -->
+                <button @click="desativar(e.id)" class="btn-action delete">Excluir</button>
               </td>
             </tr>
           </tbody>
@@ -99,7 +104,7 @@
   height: 100%;
 }
 
-.content{
+.content {
   padding-bottom: 1rem;
 }
 
@@ -284,17 +289,19 @@ import { supabase } from '../composables/useSupabase'
 
 const epis = ref([])
 const editandoId = ref(null)
+
 const defaultForm = () => ({
   nome: '',
   ca: '',
   categoria: '',
   cor: '',
-  quantidade: 0,  
+  quantidade: 0,
   descricao: '',
   foto: ''
 })
 
 const form = reactive(defaultForm())
+
 const resetForm = () => {
   Object.assign(form, defaultForm())
   editandoId.value = null
@@ -306,6 +313,7 @@ const carregar = async () => {
     .select('*')
     .eq('ativo', true)
     .order('nome', { ascending: true })
+
   if (error) {
     alert('Erro ao carregar EPIs')
     return
@@ -328,10 +336,11 @@ const salvar = async () => {
   const { error } = editandoId.value
     ? await supabase.from('epis').update(payload).eq('id', editandoId.value)
     : await supabase.from('epis').insert([payload])
+
   if (error) {
     alert('Erro ao salvar EPI')
     return
-  } 
+  }
 
   resetForm()
   await carregar()
@@ -342,17 +351,21 @@ const prepararEdicao = (e) => {
   Object.assign(form, e)
 }
 
-const excluir = async (id) => {
-  if (!confirm('Deseja excluir este EPI? Isso apagará o histórico de retiradas.')) return
+// ✅ CORRIGIDO: soft delete (ativo = false) ao invés de DELETE
+// Evita quebrar o histórico de retiradas vinculadas (ON DELETE RESTRICT)
+const desativar = async (id) => {
+  if (!confirm('Deseja desativar este EPI? Ele não aparecerá mais no sistema, mas o histórico de retiradas será preservado.')) return
+
   const { error } = await supabase
     .from('epis')
-    .delete()
+    .update({ ativo: false })
     .eq('id', id)
+
   if (error) {
-    alert('Erro ao excluir EPI')
+    alert('Erro ao desativar EPI')
     return
   }
-  
+
   await carregar()
 }
 

@@ -5,9 +5,9 @@
     </header>
 
     <div class="grid-cards">
-      <div v-for="epi in epis":key="epi.id"class="card-epi">
+      <div v-for="epi in epis" :key="epi.id" class="card-epi">
         <div class="card-image">
-          <!-- <img :src="epi.foto":alt="epi.nome || 'EPI'"loading="lazy"/> -->
+          <!-- <img :src="epi.foto" :alt="epi.nome || 'EPI'" loading="lazy" /> -->
         </div>
 
         <div class="card-body">
@@ -17,15 +17,15 @@
               <p class="categoria">{{ epi.categoria }}</p>
             </div>
 
-            <div class="status":class="{indisponivel: (epi.quantidade || 0) <= 0}">
-              {{(epi.quantidade || 0) > 0? 'Disponível': 'Indisponível'}}
+            <div class="status" :class="{ indisponivel: (epi.estoque_disponivel || 0) <= 0 }">
+              {{ (epi.estoque_disponivel || 0) > 0 ? 'Disponível' : 'Indisponível' }}
             </div>
           </div>
 
           <div class="info-row">
             <div class="info-item">
               <div class="info-content">
-                <!-- <img class="info-icon"src="/cor.png"alt="Ícone cor"/> -->
+                <!-- <img class="info-icon" src="/cor.png" alt="Ícone cor" /> -->
                 <div class="info-text">
                   <span class="label">Cor</span>
                   <strong>{{ epi.cor || 'Não informado' }}</strong>
@@ -35,10 +35,11 @@
 
             <div class="info-item">
               <div class="info-content">
-                <!-- <img class="info-icon"src="/estoque-pronto.png"alt="Ícone estoque"/> -->
+                <!-- <img class="info-icon" src="/estoque-pronto.png" alt="Ícone estoque" /> -->
                 <div class="info-text">
-                  <span class="label">Qtd. Estoque</span>
-                  <strong>{{ epi.quantidade || 0 }} unidades</strong>
+                  <span class="label">Qtd. Disponível</span>
+                  <!-- ✅ Usa estoque_disponivel calculado pela view -->
+                  <strong>{{ epi.estoque_disponivel || 0 }} unidades</strong>
                 </div>
               </div>
             </div>
@@ -50,7 +51,6 @@
 </template>
 
 <style scoped>
-
 .top-section {
   margin-bottom: 1.5rem;
 }
@@ -106,7 +106,7 @@
   border-radius: 1rem;
   padding: 0.75rem;
   margin-bottom: 1rem;
-} 
+}
 
 .equipamento-info {
   flex: 1;
@@ -211,30 +211,33 @@
     font-size: 2rem;
   }
 }
-
 </style>
 
 <script setup>
-
 import { ref, onMounted } from 'vue'
-import { useSupabase } from '../composables/useSupabase'
+// ✅ CORRIGIDO: import consistente com os outros componentes
+import { supabase } from '../composables/useSupabase'
 
-const { supabase } = useSupabase()
 const epis = ref([])
+
 const carregarEPIs = async () => {
+  // ✅ CORRIGIDO: busca da view epis_estoque (estoque calculado automaticamente)
+  // Filtra apenas EPIs ativos
   const { data, error } = await supabase
-    .from('epis')
+    .from('epis_estoque')
     .select('*')
+    .eq('ativo', true)
+    .order('nome')
+
   if (error) {
     console.error(error)
     return
   }
 
-  epis.value = data
+  epis.value = data || []
 }
 
 onMounted(() => {
   carregarEPIs()
 })
-
 </script>

@@ -20,7 +20,7 @@
           <i class="fas fa-exclamation-circle"></i>
           {{ erro }}
         </div>
-        
+
         <button type="submit" class="botao-entrar" :disabled="carregando">
           <i v-if="carregando" class="fas fa-spinner fa-spin"></i>
           <span v-else>Entrar</span>
@@ -147,14 +147,6 @@
   .form-box {
     padding: 30px 20px;
   }
-
-  .titulo {
-    font-size: 24px;
-  }
-
-  .subtitulo {
-    font-size: 14px;
-  }
 }
 </style>
 
@@ -162,34 +154,44 @@
 import { ref } from 'vue'
 import { useSupabase } from '../composables/useSupabase'
 import { useRouter } from 'vue-router'
+
 const { supabase } = useSupabase()
 const router = useRouter()
+
 const email = ref('')
 const senha = ref('')
 const erro = ref('')
 const carregando = ref(false)
+
 async function fazerLogin() {
   erro.value = ''
+
   if (!email.value || !senha.value) {
     erro.value = 'Por favor, preencha todos os campos'
     return
   }
+
   carregando.value = true
+
   try {
     const { error } = await supabase.auth.signInWithPassword({
       email: email.value,
       password: senha.value
     })
+
     if (error) {
       erro.value = 'E-mail ou senha incorretos. Tente novamente.'
-      carregando.value = false
       return
     }
+
+    // ✅ CORRIGIDO: reseta carregando antes de navegar
+    carregando.value = false
     router.push('/Nave')
-  }
-  catch (err) {
+  } catch (err) {
     erro.value = 'Erro ao fazer login. Tente novamente mais tarde.'
     console.error('Erro ao fazer login:', err)
+  } finally {
+    // ✅ finally garante que carregando sempre volta para false
     carregando.value = false
   }
 }

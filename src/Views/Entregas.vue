@@ -9,7 +9,7 @@
       <section class="card-form">
         <div class="card-header">
           <div>
-            <h3>Informações do EPIs</h3>
+            <h3>Informações do EPI</h3>
           </div>
         </div>
 
@@ -19,7 +19,13 @@
               <label>Funcionário *</label>
               <select v-model.number="form.id_funcionario" required>
                 <option disabled value="">Selecione o funcionário</option>
-                <option v-for="func in funcionarios" :key="func.id_funcionario" :value="func.id_funcionario">{{func.nome }}</option>
+                <option
+                  v-for="func in funcionarios"
+                  :key="func.id_funcionario"
+                  :value="func.id_funcionario"
+                >
+                  {{ func.nome }}
+                </option>
               </select>
             </div>
 
@@ -27,7 +33,14 @@
               <label>EPI a ser retirado *</label>
               <select v-model="form.id_epi" required>
                 <option disabled value="">Selecione o EPI</option>
-                <option v-for="epi in epis" :key="epi.id" :value="epi.id" :disabled="epi.quantidade <= 0">{{ epi.nome }}
+                <!-- ✅ Usa estoque_disponivel da view epis_estoque -->
+                <option
+                  v-for="epi in epis"
+                  :key="epi.id"
+                  :value="epi.id"
+                  :disabled="epi.estoque_disponivel <= 0"
+                >
+                  {{ epi.nome }} ({{ epi.estoque_disponivel }} disponível)
                 </option>
               </select>
             </div>
@@ -36,13 +49,20 @@
           <div class="form-row">
             <div class="form-group">
               <label>Estoque disponível</label>
-              <input type="text" :value="epiSelecionado?.quantidade ?? 0" disabled />
+              <!-- ✅ Mostra estoque_disponivel calculado pela view -->
+              <input type="text" :value="epiSelecionado?.estoque_disponivel ?? 0" disabled />
             </div>
 
             <div class="form-group">
               <label>Quantidade a retirar *</label>
-              <input v-model.number="form.quantidade" type="number" min="1" :max="epiSelecionado?.quantidade || 1"
-                required />
+              <!-- ✅ Limita pelo estoque_disponivel -->
+              <input
+                v-model.number="form.quantidade"
+                type="number"
+                min="1"
+                :max="epiSelecionado?.estoque_disponivel || 1"
+                required
+              />
             </div>
           </div>
 
@@ -60,14 +80,18 @@
 
           <div class="form-group">
             <label>Observações</label>
-            <textarea v-model="form.observacoes"
-              placeholder="Adicione observações sobre a retirada do EPI..."></textarea>
+            <textarea
+              v-model="form.observacoes"
+              placeholder="Adicione observações sobre a retirada do EPI..."
+            ></textarea>
           </div>
 
           <div class="divider"></div>
           <div class="action-bar">
             <button type="submit" class="btn btn-primary">Registrar</button>
-            <button type="button" class="btn btn-outline" @click="limparFormulario">Limpar formulário</button>
+            <button type="button" class="btn btn-outline" @click="limparFormulario">
+              Limpar formulário
+            </button>
           </div>
         </form>
       </section>
@@ -80,10 +104,9 @@
   height: 100%;
 }
 
-.content{
+.content {
   padding-bottom: 1rem;
 }
-
 
 .header-section {
   text-align: center;
@@ -149,7 +172,7 @@ label {
   margin-bottom: 0.2rem;
 }
 
-input,select,textarea {
+input, select, textarea {
   height: 2.25rem;
   border-radius: 1rem;
   border: none;
@@ -165,7 +188,7 @@ textarea {
   resize: none;
 }
 
-input:focus,select:focus,textarea:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
   box-shadow: 0 0 0 0.1rem #0a3b59;
 }
@@ -215,6 +238,7 @@ import { supabase } from '../composables/useSupabase'
 
 const epis = ref([])
 const funcionarios = ref([])
+
 const defaultForm = () => ({
   id_funcionario: '',
   id_epi: '',
@@ -225,6 +249,8 @@ const defaultForm = () => ({
 })
 
 const form = reactive(defaultForm())
+
+// ✅ Usa estoque_disponivel da view epis_estoque
 const epiSelecionado = computed(() => {
   return epis.value.find(e => e.id === form.id_epi)
 })
@@ -236,21 +262,21 @@ const resetForm = () => {
   form.horario_retirada = agora.toTimeString().slice(0, 5)
 }
 
+// ✅ CORRIGIDO: busca da view epis_estoque (calcula estoque automaticamente)
 const carregarEPIs = async () => {
   const { data, error } = await supabase
-    .from('epis')
+    .from('epis_estoque')
     .select('*')
+    .eq('ativo', true)
     .order('nome')
+
   if (error) {
     console.error(error)
     alert('Erro ao carregar EPIs')
     return
   }
 
-  epis.value = (data || []).map(e => ({
-    ...e,
-    quantidade: Number(e.quantidade)
-  }))
+  epis.value = data || []
 }
 
 const carregarFuncionarios = async () => {
@@ -258,6 +284,7 @@ const carregarFuncionarios = async () => {
     .from('funcionarios')
     .select('id_funcionario, nome')
     .order('nome')
+
   if (error) {
     console.error(error)
     alert('Erro ao carregar funcionários')
@@ -273,38 +300,35 @@ const registrarRetirada = async () => {
     return
   }
 
-  if (form.quantidade > epiSelecionado.value.quantidade) {
-    alert('Quantidade maior que o estoque')
+  // ✅ Valida contra estoque_disponivel (calculado pela view)
+  if (form.quantidade > epiSelecionado.value.estoque_disponivel) {
+    alert('Quantidade maior que o estoque disponível')
     return
   }
 
-  try {
-    const { error: retiradaError } = await supabase
-      .from('retiradas')
-      .insert([{
-        id_funcionario: form.id_funcionario,
-        id_epi: form.id_epi,
-        quantidade: form.quantidade,
-        data_retirada: form.data_retirada,
-        horario_retirada: form.horario_retirada,
-        observacoes: form.observacoes
-      }])
+  // ✅ CORRIGIDO: une data + hora em um único campo retirado_em (timestamptz)
+  // Remove a atualização manual do estoque — a view calcula automaticamente
+  const retirado_em = `${form.data_retirada}T${form.horario_retirada}:00`
 
-    if (retiradaError) throw retiradaError
-    const novoEstoque =
-      epiSelecionado.value.quantidade - form.quantidade
-    const { error: estoqueError } = await supabase
-      .from('epis')
-      .update({ quantidade: novoEstoque })
-      .eq('id', form.id_epi)
-    if (estoqueError) throw estoqueError
-    alert('Retirada registrada com sucesso!')
-    resetForm()
-    await carregarEPIs()
-  } catch (err) {
-    console.error(err)
+  const { error } = await supabase
+    .from('retiradas')
+    .insert([{
+      id_funcionario: form.id_funcionario,
+      id_epi: form.id_epi,
+      quantidade: form.quantidade,
+      retirado_em,
+      observacoes: form.observacoes || null
+    }])
+
+  if (error) {
+    console.error(error)
     alert('Erro ao registrar retirada')
+    return
   }
+
+  alert('Retirada registrada com sucesso!')
+  resetForm()
+  await carregarEPIs()
 }
 
 const limparFormulario = () => {
@@ -316,5 +340,4 @@ onMounted(() => {
   carregarEPIs()
   carregarFuncionarios()
 })
-
 </script>

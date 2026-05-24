@@ -11,6 +11,7 @@
           <h3>{{ editandoId ? 'Alterar Registro' : 'Novo Funcionário' }}</h3>
         </div>
 
+        <!-- ✅ email removido do form (fonte de verdade é profiles.email) -->
         <form @submit.prevent="salvar" class="main-form">
           <div class="form-row">
             <div class="form-group">
@@ -26,11 +27,6 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label>Email</label>
-              <input v-model="form.email" type="email" required />
-            </div>
-
-            <div class="form-group">
               <label>Data de Nascimento</label>
               <input v-model="form.data_nascimento" type="date" required />
             </div>
@@ -39,8 +35,13 @@
           <div class="divider"></div>
 
           <div class="action-bar">
-            <button type="submit" class="btn btn-primary">{{ editandoId ? 'Atualizar' : 'Cadastrar' }}</button>
-            <button type="button" @click="resetForm" class="btn btn-outline">Limpar formulário</button>
+            <button type="submit" class="btn btn-primary">
+              {{ editandoId ? 'Atualizar' : 'Cadastrar' }}
+            </button>
+            <!-- ✅ CORRIGIDO: nome unificado — cancelarEdicao no script e no template -->
+            <button type="button" @click="cancelarEdicao" class="btn btn-outline">
+              Limpar formulário
+            </button>
           </div>
         </form>
       </section>
@@ -50,7 +51,6 @@
           <thead>
             <tr>
               <th>Nome</th>
-              <th>Email</th>
               <th>Cargo</th>
               <th>Data Nasc.</th>
               <th class="text-center">Ações</th>
@@ -60,7 +60,6 @@
           <tbody>
             <tr v-for="f in funcionarios" :key="f.id_funcionario">
               <td><span class="text-bold">{{ f.nome }}</span></td>
-              <td><span class="text-bold">{{ f.email }}</span></td>
               <td><span class="text-bold">{{ f.cargo }}</span></td>
               <td>{{ formatDate(f.data_nascimento) }}</td>
               <td class="text-center">
@@ -80,7 +79,7 @@
   height: 100%;
 }
 
-.content{
+.content {
   padding-bottom: 1rem;
 }
 
@@ -233,20 +232,6 @@ input:focus {
   color: black;
 }
 
-.badge {
-  background: #0d4c73;
-  color: #f2f2f2;
-  padding: 0.5rem 1rem;
-  border-radius: 1rem;
-  font-size: 0.95rem;
-  margin-right: 1rem;
-}
-
-.cargo-text {
-  color: black;
-  font-size: 0.95rem;
-}
-
 .btn-action {
   background: none;
   border: none;
@@ -281,14 +266,14 @@ import { supabase } from '../composables/useSupabase.js'
 const funcionarios = ref([])
 const editandoId = ref(null)
 
+// ✅ CORRIGIDO: email removido — não existe mais na tabela funcionarios
+// O email do usuário vive em profiles.email (gerenciado pelo Supabase Auth)
 const form = reactive({
   nome: '',
   cargo: '',
-  email: '',
   data_nascimento: ''
 })
 
-/* LISTAR */
 const carregar = async () => {
   const { data, error } = await supabase
     .from('funcionarios')
@@ -297,66 +282,71 @@ const carregar = async () => {
 
   if (error) {
     console.error(error.message)
+    alert('Erro ao carregar funcionários')
     return
   }
 
   funcionarios.value = data || []
 }
 
-/* SALVAR */
+// ✅ CORRIGIDO: payload explícito (sem email), await no carregar, tratamento de erro
 const salvar = async () => {
-  if (editandoId.value) {
-    await supabase
-      .from('funcionarios')
-      .update(form)
-      .eq('id_funcionario', editandoId.value)
-  } else {
-    await supabase
-      .from('funcionarios')
-      .insert([form])
+  const payload = {
+    nome: form.nome,
+    cargo: form.cargo,
+    data_nascimento: form.data_nascimento
+  }
+
+  const { error } = editandoId.value
+    ? await supabase.from('funcionarios').update(payload).eq('id_funcionario', editandoId.value)
+    : await supabase.from('funcionarios').insert([payload])
+
+  if (error) {
+    console.error(error.message)
+    alert('Erro ao salvar funcionário')
+    return
   }
 
   cancelarEdicao()
-  carregar()
+  await carregar()
 }
 
-/* EDITAR */
 const prepararEdicao = (f) => {
   editandoId.value = f.id_funcionario
-
   Object.assign(form, {
     nome: f.nome,
     cargo: f.cargo,
-    email: f.email,
     data_nascimento: f.data_nascimento
   })
 }
 
-/* DELETE */
 const excluir = async (id) => {
   if (!confirm('Deseja realmente excluir este funcionário?')) return
 
-  await supabase
+  const { error } = await supabase
     .from('funcionarios')
     .delete()
     .eq('id_funcionario', id)
 
-  carregar()
+  if (error) {
+    console.error(error.message)
+    alert('Erro ao excluir funcionário')
+    return
+  }
+
+  await carregar()
 }
 
-/* CANCELAR */
+// ✅ CORRIGIDO: nome unificado (era resetForm no template mas cancelarEdicao no script)
 const cancelarEdicao = () => {
   editandoId.value = null
-
   Object.assign(form, {
     nome: '',
     cargo: '',
-    email: '',
     data_nascimento: ''
   })
 }
 
-/* FORMAT DATA */
 const formatDate = (date) => {
   if (!date) return ''
   return new Date(date).toLocaleDateString('pt-BR')
