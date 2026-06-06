@@ -38,7 +38,7 @@
             <button type="submit" class="btn btn-primary">
               {{ editandoId ? 'Atualizar' : 'Cadastrar' }}
             </button>
-            <!-- ✅ CORRIGIDO: nome unificado — cancelarEdicao no script e no template -->
+          
             <button type="button" @click="cancelarEdicao" class="btn btn-outline">
               Limpar formulário
             </button>
@@ -266,8 +266,6 @@ import { supabase } from '../composables/useSupabase.js'
 const funcionarios = ref([])
 const editandoId = ref(null)
 
-// ✅ CORRIGIDO: email removido — não existe mais na tabela funcionarios
-// O email do usuário vive em profiles.email (gerenciado pelo Supabase Auth)
 const form = reactive({
   nome: '',
   cargo: '',
@@ -289,7 +287,6 @@ const carregar = async () => {
   funcionarios.value = data || []
 }
 
-// ✅ CORRIGIDO: payload explícito (sem email), await no carregar, tratamento de erro
 const salvar = async () => {
   const payload = {
     nome: form.nome,
@@ -337,7 +334,7 @@ const excluir = async (id) => {
   await carregar()
 }
 
-// ✅ CORRIGIDO: nome unificado (era resetForm no template mas cancelarEdicao no script)
+
 const cancelarEdicao = () => {
   editandoId.value = null
   Object.assign(form, {
