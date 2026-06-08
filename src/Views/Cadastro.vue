@@ -65,8 +65,8 @@
           </div>
         </form>
       </section>
-
-      <section class="card-table">
+      
+      <section class="card-table desktop-only">
         <table class="styled-table">
           <thead>
             <tr>
@@ -88,12 +88,29 @@
               <td>{{ e.descricao }}</td>
               <td class="text-center">
                 <button @click="prepararEdicao(e)" class="btn-action edit">Editar</button>
-                <!-- ✅ Soft delete: desativa ao invés de deletar -->
-                <button @click="desativar(e.id)" class="btn-action delete">Excluir</button>
+                <button @click="excluir(e.id)" class="btn-action delete">Excluir</button>
               </td>
             </tr>
           </tbody>
         </table>
+      </section>
+
+      <section class="cards-mobile mobile-only">
+        <div v-for="(e, index) in epis" :key="e.id ?? index" class="card-item">
+          <div class="card-item-header">
+            <span class="card-item-nome">{{ e.nome }}</span>
+            <span class="badge-ca">{{ e.ca }}</span>
+          </div>
+          <div class="card-item-info">
+            <span><strong>Categoria:</strong> {{ e.categoria }}</span>
+            <span><strong>Qtde:</strong> {{ e.quantidade }}</span>
+          </div>
+          <p class="card-item-desc">{{ e.descricao }}</p>
+          <div class="card-item-acoes">
+            <button @click="prepararEdicao(e)" class="btn-action edit">Editar</button>
+            <button @click="excluir(e.id)" class="btn-action delete">Excluir</button>
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -178,7 +195,6 @@ input {
   border: none;
   padding: 0 1rem;
   background: #ffffff;
-  backdrop-filter: blur(1rem);
   font-size: 0.95rem;
 }
 
@@ -198,30 +214,26 @@ input:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1rem;
+  gap: 1rem;
 }
 
 .btn {
   height: 2.5rem;
-  width: 12rem;
   border-radius: 1rem;
   cursor: pointer;
+  flex: 1;
 }
 
 .btn-primary {
   background: linear-gradient(45deg, rgba(13, 76, 115, 0.75), rgba(10, 59, 89, 1));
   color: #f2f2f2;
   border: none;
-  width: 30rem;
-  border-radius: 1rem;
   font-weight: 500;
 }
 
 .btn-outline {
-  border-radius: 1rem;
   background: transparent;
   border: 0.1rem solid #0a3b59;
-  width: 30rem;
   color: #0a3b59;
 }
 
@@ -239,7 +251,6 @@ input:focus {
 
 .styled-table th {
   height: 2.5rem;
-  width: 15rem;
   text-align: center;
   font-size: 0.80rem;
   color: #0a3b59;
@@ -258,7 +269,8 @@ input:focus {
   color: #f2f2f2;
   padding: 0.5rem 1rem;
   border-radius: 1rem;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  display: inline-block;
 }
 
 .edit {
@@ -280,6 +292,96 @@ input:focus {
 
 .text-center {
   text-align: center;
+}
+
+.cards-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card-item {
+  background: #f2f2f2;
+  border-radius: 1rem;
+  border: 0.125rem solid #0a3b59;
+  padding: 1rem;
+}
+
+.card-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.card-item-nome {
+  font-weight: 700;
+  color: #0a3b59;
+  font-size: 1rem;
+}
+
+.card-item-info {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 0.4rem;
+}
+
+.card-item-desc {
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 0.75rem;
+}
+
+.card-item-acoes {
+  display: flex;
+  gap: 1rem;
+}
+
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .header-section h1 {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .action-bar {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: flex;
+  }
+
+  .header-section h1 {
+    font-size: 1.2rem;
+  }
+
+  .header-section p {
+    font-size: 0.85rem;
+    padding: 0 0.5rem;
+  }
 }
 </style>
 
@@ -351,16 +453,17 @@ const prepararEdicao = (e) => {
   Object.assign(form, e)
 }
 
-const desativar = async (id) => {
-  if (!confirm('Deseja desativar este EPI? Ele não aparecerá mais no sistema, mas o histórico de retiradas será preservado.')) return
+const excluir = async (id) => {
+  if (!confirm('Deseja excluir este EPI? Todas as retiradas vinculadas também serão excluídas permanentemente.')) return
 
   const { error } = await supabase
     .from('epis')
-    .update({ ativo: false })
+    .delete()
     .eq('id', id)
 
   if (error) {
-    alert('Erro ao desativar EPI')
+    console.error('Erro:', error)
+    alert('Erro ao excluir EPI: ' + error.message)
     return
   }
 

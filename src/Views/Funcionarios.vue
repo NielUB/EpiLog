@@ -11,7 +11,6 @@
           <h3>{{ editandoId ? 'Alterar Registro' : 'Novo Funcionário' }}</h3>
         </div>
 
-        <!-- ✅ email removido do form (fonte de verdade é profiles.email) -->
         <form @submit.prevent="salvar" class="main-form">
           <div class="form-row">
             <div class="form-group">
@@ -38,7 +37,6 @@
             <button type="submit" class="btn btn-primary">
               {{ editandoId ? 'Atualizar' : 'Cadastrar' }}
             </button>
-          
             <button type="button" @click="cancelarEdicao" class="btn btn-outline">
               Limpar formulário
             </button>
@@ -46,7 +44,7 @@
         </form>
       </section>
 
-      <section class="card-table">
+      <section class="card-table desktop-only">
         <table class="styled-table">
           <thead>
             <tr>
@@ -69,6 +67,20 @@
             </tr>
           </tbody>
         </table>
+      </section>
+      
+      <section class="cards-mobile mobile-only">
+        <div v-for="f in funcionarios" :key="f.id_funcionario" class="card-item">
+          <div class="card-item-header">
+            <span class="card-item-nome">{{ f.nome }}</span>
+            <span class="card-item-data">{{ formatDate(f.data_nascimento) }}</span>
+          </div>
+          <p class="card-item-cargo">{{ f.cargo }}</p>
+          <div class="card-item-acoes">
+            <button class="btn-action edit" @click="prepararEdicao(f)">Editar</button>
+            <button class="btn-action delete" @click="excluir(f.id_funcionario)">Excluir</button>
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -153,7 +165,6 @@ input {
   border: none;
   padding: 0 1rem;
   background: #ffffff;
-  backdrop-filter: blur(1rem);
   font-size: 0.95rem;
 }
 
@@ -173,30 +184,26 @@ input:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1rem;
+  gap: 1rem;
 }
 
 .btn {
   height: 2.5rem;
-  width: 12rem;
   border-radius: 1rem;
   cursor: pointer;
+  flex: 1;
 }
 
 .btn-primary {
   background: linear-gradient(45deg, rgba(13, 76, 115, 0.75), rgba(10, 59, 89, 1));
   color: #f2f2f2;
   border: none;
-  width: 30rem;
-  border-radius: 1rem;
   font-weight: 500;
 }
 
 .btn-outline {
-  border-radius: 1rem;
   background: transparent;
   border: 0.1rem solid #0a3b59;
-  width: 30rem;
   color: #0a3b59;
 }
 
@@ -214,7 +221,6 @@ input:focus {
 
 .styled-table th {
   height: 2.5rem;
-  width: 15rem;
   text-align: center;
   font-size: 0.80rem;
   color: #0a3b59;
@@ -252,9 +258,89 @@ input:focus {
   text-align: center;
 }
 
-@media (max-width: 600px) {
+.cards-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card-item {
+  background: #f2f2f2;
+  border-radius: 1rem;
+  border: 0.125rem solid #0a3b59;
+  padding: 1rem;
+}
+
+.card-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.card-item-nome {
+  font-weight: 700;
+  color: #0a3b59;
+  font-size: 1rem;
+}
+
+.card-item-data {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.card-item-cargo {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 0.75rem;
+}
+
+.card-item-acoes {
+  display: flex;
+  gap: 1rem;
+}
+
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .header-section h1 {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .action-bar {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: flex;
+  }
+
+  .header-section h1 {
+    font-size: 1.2rem;
+  }
+
+  .header-section p {
+    font-size: 0.85rem;
   }
 }
 </style>
@@ -334,7 +420,6 @@ const excluir = async (id) => {
   await carregar()
 }
 
-
 const cancelarEdicao = () => {
   editandoId.value = null
   Object.assign(form, {
@@ -343,10 +428,11 @@ const cancelarEdicao = () => {
     data_nascimento: ''
   })
 }
-
 const formatDate = (date) => {
   if (!date) return ''
-  return new Date(date).toLocaleDateString('pt-BR')
+
+  const [ano, mes, dia] = date.split('-')
+  return `${dia}/${mes}/${ano}`
 }
 
 onMounted(carregar)

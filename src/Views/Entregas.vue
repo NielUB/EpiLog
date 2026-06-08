@@ -8,9 +8,7 @@
     <main class="content">
       <section class="card-form">
         <div class="card-header">
-          <div>
-            <h3>Informações do EPI</h3>
-          </div>
+          <h3>Informações do EPI</h3>
         </div>
 
         <form @submit.prevent="registrarRetirada" class="main-form">
@@ -33,7 +31,6 @@
               <label>EPI a ser retirado *</label>
               <select v-model="form.id_epi" required>
                 <option disabled value="">Selecione o EPI</option>
-                <!-- ✅ Usa estoque_disponivel da view epis_estoque -->
                 <option
                   v-for="epi in epis"
                   :key="epi.id"
@@ -49,13 +46,11 @@
           <div class="form-row">
             <div class="form-group">
               <label>Estoque disponível</label>
-              <!-- ✅ Mostra estoque_disponivel calculado pela view -->
               <input type="text" :value="epiSelecionado?.estoque_disponivel ?? 0" disabled />
             </div>
 
             <div class="form-group">
               <label>Quantidade a retirar *</label>
-              <!-- ✅ Limita pelo estoque_disponivel -->
               <input
                 v-model.number="form.quantidade"
                 type="number"
@@ -178,7 +173,6 @@ input, select, textarea {
   border: none;
   padding: 0 1rem;
   background: #ffffff;
-  backdrop-filter: blur(1rem);
   font-size: 0.95rem;
 }
 
@@ -204,31 +198,56 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1rem;
+  gap: 1rem;
 }
 
 .btn {
   height: 2.5rem;
-  width: 12rem;
   border-radius: 1rem;
   cursor: pointer;
+  flex: 1;
 }
 
 .btn-primary {
   background: linear-gradient(45deg, rgba(13, 76, 115, 0.75), rgba(10, 59, 89, 1));
   color: #f2f2f2;
   border: none;
-  width: 30rem;
-  border-radius: 1rem;
   font-weight: 500;
 }
 
 .btn-outline {
-  border-radius: 1rem;
   background: transparent;
   border: 0.1rem solid #0a3b59;
-  width: 30rem;
   color: #0a3b59;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .action-bar {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .header-section h1 {
+    font-size: 1.2rem;
+  }
+
+  .header-section p {
+    font-size: 0.85rem;
+    padding: 0 0.5rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .header-section h1 {
+    font-size: 1.3rem;
+  }
 }
 </style>
 
@@ -250,7 +269,6 @@ const defaultForm = () => ({
 
 const form = reactive(defaultForm())
 
-// ✅ Usa estoque_disponivel da view epis_estoque
 const epiSelecionado = computed(() => {
   return epis.value.find(e => e.id === form.id_epi)
 })
@@ -262,7 +280,6 @@ const resetForm = () => {
   form.horario_retirada = agora.toTimeString().slice(0, 5)
 }
 
-// ✅ CORRIGIDO: busca da view epis_estoque (calcula estoque automaticamente)
 const carregarEPIs = async () => {
   const { data, error } = await supabase
     .from('epis_estoque')
@@ -300,14 +317,11 @@ const registrarRetirada = async () => {
     return
   }
 
-  // ✅ Valida contra estoque_disponivel (calculado pela view)
   if (form.quantidade > epiSelecionado.value.estoque_disponivel) {
     alert('Quantidade maior que o estoque disponível')
     return
   }
 
-  // ✅ CORRIGIDO: une data + hora em um único campo retirado_em (timestamptz)
-  // Remove a atualização manual do estoque — a view calcula automaticamente
   const retirado_em = `${form.data_retirada}T${form.horario_retirada}:00`
 
   const { error } = await supabase

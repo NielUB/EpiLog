@@ -37,6 +37,7 @@
   align-items: center;
   min-height: 100vh;
   background-color: #0A3B59;
+  padding: 1rem;
 }
 
 .form-box {
@@ -45,19 +46,21 @@
   align-items: center;
   background-color: #f2f2f2;
   padding-top: 0.8rem;
-  height: 30rem;
   width: 35rem;
+  max-width: 100%;
   border-color: #0A3B59;
   border: solid 1px;
+  border-radius: 0.5rem;
+  padding-bottom: 2rem;
 }
 
 .logotipo {
   display: flex;
-  padding: 1.2rem;
 }
 
 .logo {
   height: 6rem;
+  max-width: 80vw;
 }
 
 .formulario {
@@ -65,11 +68,16 @@
   flex-direction: column;
   gap: 1rem;
   padding-top: 1rem;
+  width: 100%;
+  align-items: center;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 27rem;
+  padding: 0 1rem;
 }
 
 .label {
@@ -80,14 +88,12 @@
 }
 
 .input {
-  display: flex;
-  width: 25rem;
+  width: 100%;
   height: 2.5rem;
-  padding: 0rem 0rem 0rem 2rem;
+  padding: 0rem 0rem 0rem 1.5rem;
   font-weight: 500;
-  font-size: 1.2rem;
-  border: solid 1px;
-  border-color: #0A3B59;
+  font-size: 1.1rem;
+  border: solid 1px #0A3B59;
   border-radius: 2rem;
   color: #070707;
   background-color: #Ffffff;
@@ -97,27 +103,32 @@
 .input:focus {
   outline: none;
   border-color: #0A3B59;
+  box-shadow: 0 0 0 0.1rem #0a3b59;
 }
 
 .mensagem-erro {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  width: 25rem;
-  height: 2.5rem;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 25rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   background-color: #FECACA;
   border: 1px solid #FECACA;
   color: #D94d1a;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .mensagem-erro i {
   font-size: 18px;
+  flex-shrink: 0;
 }
 
 .botao-entrar {
-  width: 25rem;
+  width: 100%;
+  max-width: 25rem;
   height: 2.5rem;
   background-color: #003D99;
   color: #F2f2f2;
@@ -132,6 +143,7 @@
   justify-content: center;
   gap: 1rem;
   min-height: 44px;
+  margin: 0 1rem;
 }
 
 .botao-entrar:hover:not(:disabled) {
@@ -143,9 +155,37 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .form-box {
-    padding: 30px 20px;
+    width: 90vw;
+  }
+
+  .logo {
+    height: 4.5rem;
+  }
+
+  .label {
+    font-size: 1rem;
+  }
+
+  .input {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container-login {
+    align-items: flex-start;
+    padding-top: 3rem;
+  }
+
+  .form-box {
+    width: 100%;
+    border-radius: 1rem;
+  }
+
+  .logo {
+    height: 3.5rem;
   }
 }
 </style>
@@ -184,14 +224,12 @@ async function fazerLogin() {
       return
     }
 
-    // ✅ CORRIGIDO: reseta carregando antes de navegar
     carregando.value = false
     router.push('/Nave')
   } catch (err) {
     erro.value = 'Erro ao fazer login. Tente novamente mais tarde.'
     console.error('Erro ao fazer login:', err)
   } finally {
-    // ✅ finally garante que carregando sempre volta para false
     carregando.value = false
   }
 }
